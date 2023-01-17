@@ -10,7 +10,7 @@ from gurobipy import Model, GRB, quicksum
 # PREPROCESSING
 
 # Open the json file
-JSON_PATH = "data/toy_instance.json"
+JSON_PATH = "data/large_instance.json"
 f = open(JSON_PATH, encoding="utf-8")
 data = json.load(f)
 
@@ -145,7 +145,19 @@ ax.set_xticks(list_days)
 
 # Map a color to each qualification
 qual_color = {}
-colors = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown"]
+colors = [
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "purple",
+    "pink",
+    "brown",
+    "gray",
+    "olive",
+    "cyan",
+]
 for i, qual in enumerate(list_quals):
     qual_color[qual] = i
 
@@ -162,5 +174,8 @@ for job in list_jobs:
                             color=colors[qual_color[qual]],
                             label=qual,
                         )
-plt.legend(list_quals)
+# Add a legend for the colors quals
+handles, labels = ax.get_legend_handles_labels()
+by_label = dict(zip(labels, handles))
+ax.legend(by_label.values(), by_label.keys())
 plt.show()

@@ -5,5 +5,5 @@ Something something about linear optimization on planning problems, idk who care
 It outputs this kind of planning
 
 <p align="center">
-  <img src="media/planning.png" alt="" width="60%"/>
+  <img src="media/large_planning.png" alt="" width="80%"/>
 </p>
