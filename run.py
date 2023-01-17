@@ -4,12 +4,13 @@ Runs the Gurobi linear optimizer on the planning problem.
 
 import json
 import numpy as np
+import matplotlib.pyplot as plt
 from gurobipy import Model, GRB, quicksum
 
 # PREPROCESSING
 
 # Open the json file
-JSON_PATH = "toy_instance.json"
+JSON_PATH = "data/toy_instance.json"
 f = open(JSON_PATH, encoding="utf-8")
 data = json.load(f)
 
@@ -133,3 +134,33 @@ for job in list_jobs:
             for qual in list_quals:
                 if planning[worker, qual, day, job].x == 1:
                     print(f"planning[{worker}, {qual}, {day}, {job}]=1")
+
+# Plot the results
+fig, ax = plt.subplots()
+ax.set_title("Planning")
+ax.set_xlabel("Jour")
+ax.set_ylabel("Worker")
+# Set xticks
+ax.set_xticks(list_days)
+
+# Map a color to each qualification
+qual_color = {}
+colors = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown"]
+for i, qual in enumerate(list_quals):
+    qual_color[qual] = i
+
+for job in list_jobs:
+    if chosenjob[job].x == 1:
+        for worker in list_workers:
+            for day in list_days:
+                for qual in list_quals:
+                    if planning[worker, qual, day, job].x == 1:
+                        ax.barh(
+                            worker,
+                            1,
+                            left=day - 1,
+                            color=colors[qual_color[qual]],
+                            label=qual,
+                        )
+plt.legend(list_quals)
+plt.show()
