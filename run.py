@@ -21,7 +21,7 @@ list_workers = [x["name"] for x in data["staff"]]
 list_jobs = [x["name"] for x in data["jobs"]]
 
 # Create utility dictionaries
-conge, qualifie, requirements, isactive, gain, penalite = {}, {}, {}, {}, {}, {}
+conge, qualifie, requirements, gain, penalite, islate = {}, {}, {}, {}, {}, {}
 
 # Fill the dictionaries
 for personne in data["staff"]:
@@ -37,8 +37,8 @@ for projet in data["jobs"]:
     # gain is the reward of the job
     gain[job] = projet["gain"]
     for day in list_days:
-        # isactive is a binary variable that is 1 if the job is active on the day
-        isactive[job, day] = 1 * (day <= projet["due_date"])
+        # islate is a binary variable that is 1 if the job is late on the day
+        islate[job, day] = 1 * (day > projet["due_date"])
     # penalite is the daily penalty of the job
     penalite[job] = projet["daily_penalty"]
     for qual in list_quals:
@@ -56,22 +56,25 @@ estaffecte = {}
 
 # Create the variables
 for job in list_jobs:
-    chosenjob[job] = m.addVar(vtype=GRB.INTEGER, lb=0, ub=1, name=f"chosenjob_{job}")
+    chosenjob[job] = m.addVar(vtype=GRB.BINARY, name=f"chosenjob_{job}")
     for worker in list_workers:
         estaffecte[worker, job] = m.addVar(
-            vtype=GRB.INTEGER, lb=0, ub=1, name=f"estafecte_{worker}_{job}"
+            vtype=GRB.BINARY, name=f"estafecte_{worker}_{job}"
         )
         for qual in list_quals:
             for day in list_days:
                 planning[worker, qual, day, job] = m.addVar(
-                    vtype=GRB.INTEGER,
-                    lb=0,
-                    ub=1,
+                    vtype=GRB.BINARY, 
                     name=f"planning_{worker}_{qual}_{day}_{job}",
                 )
+nbmaxjobs = m.addVar(vtype=GRB.INTEGER, lb=0, name="nbmaxjobs")
 
 # Create the constraints
 for worker in list_workers:
+    # Definition de nbmaxjobs
+    m.addConstr(
+        quicksum([estaffecte[worker,job] for job in list_jobs]) <= nbmaxjobs
+    )
     for day in list_days:
         # Contrainte d'unicité d'affectation
         m.addConstr(
@@ -91,6 +94,8 @@ for worker in list_workers:
                 m.addConstr(planning[worker, qual, day, job] <= qualifie[worker, qual])
                 # Contrainte de conge
                 m.addConstr(planning[worker, qual, day, job] + conge[worker, day] <= 1)
+                # definition de estaffecte(worker,job)
+                m.addConstr(estaffecte[worker,job] >= planning[worker,qual,day,job])
 
 M = 10**6
 
@@ -113,7 +118,7 @@ for job in list_jobs:
 argent = quicksum(
     [
         gain[job] * chosenjob[job]
-        - quicksum([(1 - isactive[job, day]) * penalite[job] for day in list_days])
+        - quicksum([islate[job, day] * penalite[job] for day in list_days])
         for job in list_jobs
     ]
 )
