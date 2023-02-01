@@ -16,8 +16,8 @@ Maximizing money alone gets us the most amount of money (833) but it makes worke
 
 Maximizing money and minimizing the number of different jobs per worker reduces the money gain (290) because we take less jobs, but workers can focus on a single job during the month.
 
-Here is the Pareto Surface for the two first objectives: the crosses represent non-dominated solutions to the planning problem (e.g it is possible to create a planning that yields 808 of money while workers only work on 5 different projects)
+Here is the Pareto Surface for the first two objectives: the crosses represent non-dominated solutions to the planning problem (e.g it is possible to create a planning that yields 808 of money while workers only work on 5 different projects)
 
 <p align="center">
-  <img src="media\pareto.png" alt="Pareto" width="80%"/>
+  <img src="media\pareto1.png" alt="Pareto" width="80%"/>
 </p>
