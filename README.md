@@ -9,7 +9,7 @@ The data folder has example datasets with lists of workers and jobs. The objecti
 Here is an example of different plannings according to different weights on the first two objectives (colors are different jobs assigned)
 
 <p align="center">
-  <img src="media\vizPlanning.png" alt="Plannings" width="80%"/>
+  <img src="media\vizPlanning.png" alt="Plannings" width="100%"/>
 </p>
 
 Maximizing money alone gets us the most amount of money (833) but it makes workers work on a lot of different jobs.
