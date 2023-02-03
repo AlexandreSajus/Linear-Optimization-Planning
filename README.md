@@ -6,6 +6,8 @@ The data folder has example datasets with lists of workers and jobs. The objecti
 - Minimize the maximum amount of different jobs assigned to a worker
 - Minimize the maximum duration of a project
 
+The model used here is explained in the model.pdf file.
+
 Here is the Pareto Surface of the planning problem on the medium data instance, it reprensents non-dominated solutions to the problem i.e solutions that don't have alternatives that are clearly superior (better on every objective)
 
 <p align="center">
