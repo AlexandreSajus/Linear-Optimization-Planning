@@ -29,18 +29,23 @@ for personne in data["staff"]:
     for qual in list_quals:
         # qualifie is a binary variable that is 1 if the worker has the qualification
         qualifie[worker, qual] = 1 * (qual in personne["qualifications"])
+
     for day in list_days:
         # conge is a binary variable that is 1 if the worker is on vacation
         conge[worker, day] = 1 * (day in personne["vacations"])
+
 for projet in data["jobs"]:
     job = projet["name"]
     # gain is the reward of the job
     gain[job] = projet["gain"]
+
     for day in list_days:
         # itstoolate is a binary variable that is 1 if the job is late on the day
         itstoolate[job, day] = 1 * (day > projet["due_date"])
+
     # penalite is the daily penalty of the job
     penalite[job] = projet["daily_penalty"]
+
     for qual in list_quals:
         if qual in projet["working_days_per_qualification"]:
             # requirements is the number of days the job requires the qualification
@@ -53,36 +58,42 @@ m = Model("Projet_SDP")
 chosenjob = {}
 planning = {}
 estaffecte = {}
-workedtoday={}
-begin,end={},{}
+workedtoday = {}
+begin, end = {}, {}
+
 # Create the variables
 for job in list_jobs:
     chosenjob[job] = m.addVar(vtype=GRB.BINARY, name=f"chosenjob_{job}")
-    begin[job] =  m.addVar(vtype=GRB.INTEGER, lb=0, name=f"begin_{job}")
-    end[job] =  m.addVar(vtype=GRB.INTEGER, lb=0, name=f"end_{job}")
+    begin[job] = m.addVar(vtype=GRB.INTEGER, lb=0, name=f"begin_{job}")
+    end[job] = m.addVar(vtype=GRB.INTEGER, lb=0, name=f"end_{job}")
+
     for worker in list_workers:
         estaffecte[worker, job] = m.addVar(
             vtype=GRB.BINARY, name=f"estafecte_{worker}_{job}"
         )
+
         for qual in list_quals:
             for day in list_days:
                 planning[worker, qual, day, job] = m.addVar(
-                    vtype=GRB.BINARY, 
+                    vtype=GRB.BINARY,
                     name=f"planning_{worker}_{qual}_{day}_{job}",
                 )
+
     for day in list_days:
-        workedtoday[job, day]=m.addVar(
+        workedtoday[job, day] = m.addVar(
             vtype=GRB.BINARY, name=f"workedtoday_{job}_{day}"
         )
+
+# Objective functions
 nbmaxjobs = m.addVar(vtype=GRB.INTEGER, lb=0, name="nbmaxjobs")
 maxlenjob = m.addVar(vtype=GRB.INTEGER, lb=0, name="maxlenjob")
 
 # Create the constraints
 for worker in list_workers:
+
     # Definition de nbmaxjobs
-    m.addConstr(
-        quicksum([estaffecte[worker,job] for job in list_jobs]) <= nbmaxjobs
-    )
+    m.addConstr(quicksum([estaffecte[worker, job] for job in list_jobs]) <= nbmaxjobs)
+
     for day in list_days:
         # Contrainte d'unicité d'affectation
         m.addConstr(
@@ -103,19 +114,21 @@ for worker in list_workers:
                 # Contrainte de conge
                 m.addConstr(planning[worker, qual, day, job] + conge[worker, day] <= 1)
                 # definition de estaffecte(worker,job)
-                m.addConstr(estaffecte[worker,job] >= planning[worker,qual,day,job])
+                m.addConstr(estaffecte[worker, job] >= planning[worker, qual, day, job])
                 # definition de workedtoday(job,day)
                 m.addConstr(planning[worker, qual, day, job] <= workedtoday[job, day])
 
 M = 10**6
 
 for job in list_jobs:
-    m.addConstr(1+end[job]-begin[job]<=maxlenjob)
+    m.addConstr(1 + end[job] - begin[job] <= maxlenjob)
+
     for day in list_days:
         # definition de begin(job)
-        m.addConstr(day-begin[job]>=M*(workedtoday[job,day]-1))
+        m.addConstr(day - begin[job] >= M * (workedtoday[job, day] - 1))
         # definition de end(job)
-        m.addConstr(end[job]-day>=M*(workedtoday[job,day]-1))
+        m.addConstr(end[job] - day >= M * (workedtoday[job, day] - 1))
+
     for qual in list_quals:
         # Contrainte de completion des projets
         m.addConstr(
@@ -134,7 +147,12 @@ for job in list_jobs:
 argent = quicksum(
     [
         gain[job] * chosenjob[job]
-        - quicksum([itstoolate[job, day] * workedtoday[job,day] * penalite[job] for day in list_days])
+        - quicksum(
+            [
+                itstoolate[job, day] * workedtoday[job, day] * penalite[job]
+                for day in list_days
+            ]
+        )
         for job in list_jobs
     ]
 )
