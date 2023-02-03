@@ -10,7 +10,7 @@ from gurobipy import Model, GRB, quicksum
 # PREPROCESSING
 
 # Open the json file
-JSON_PATH = "data/large_instance.json"
+JSON_PATH = "data/medium_instance.json"
 f = open(JSON_PATH, encoding="utf-8")
 data = json.load(f)
 
@@ -54,10 +54,12 @@ chosenjob = {}
 planning = {}
 estaffecte = {}
 workedtoday={}
-
+begin,end={},{}
 # Create the variables
 for job in list_jobs:
     chosenjob[job] = m.addVar(vtype=GRB.BINARY, name=f"chosenjob_{job}")
+    begin[job] =  m.addVar(vtype=GRB.INTEGER, lb=0, name=f"begin_{job}")
+    end[job] =  m.addVar(vtype=GRB.INTEGER, lb=0, name=f"end_{job}")
     for worker in list_workers:
         estaffecte[worker, job] = m.addVar(
             vtype=GRB.BINARY, name=f"estafecte_{worker}_{job}"
@@ -73,6 +75,7 @@ for job in list_jobs:
             vtype=GRB.BINARY, name=f"workedtoday_{job}_{day}"
         )
 nbmaxjobs = m.addVar(vtype=GRB.INTEGER, lb=0, name="nbmaxjobs")
+maxlenjob = m.addVar(vtype=GRB.INTEGER, lb=0, name="maxlenjob")
 
 # Create the constraints
 for worker in list_workers:
@@ -107,6 +110,12 @@ for worker in list_workers:
 M = 10**6
 
 for job in list_jobs:
+    m.addConstr(1+end[job]-begin[job]<=maxlenjob)
+    for day in list_days:
+        # definition de begin(job)
+        m.addConstr(day-begin[job]>=M*(workedtoday[job,day]-1))
+        # definition de end(job)
+        m.addConstr(end[job]-day>=M*(workedtoday[job,day]-1))
     for qual in list_quals:
         # Contrainte de completion des projets
         m.addConstr(
@@ -134,16 +143,41 @@ argent = quicksum(
 m.setObjective(argent, GRB.MAXIMIZE)
 m.Params.LogToConsole = 0
 
-epsilon=len(list_jobs)
-while epsilon>=0:
-    m.addConstr(nbmaxjobs<=epsilon)
-    m.optimize()
-    epsilon=nbmaxjobs.x-1
-    print(f"Argent : {m.objVal}, Nb_max_jobs : {nbmaxjobs.x}")
-    # for worker in list_workers:
-    #     print(worker)
-    #     for day in list_days:
-    #         for job in list_jobs:
-    #             for qual in list_quals:
-    #                 if planning[worker, qual, day, job].x==1:
-    #                     print(f"   day={day}, job={job}, qual={qual}")
+# epsilon=len(list_jobs)
+# while epsilon>=0:
+#     m.addConstr(nbmaxjobs<=epsilon)
+#     m.optimize()
+#     epsilon=nbmaxjobs.x-1
+#     print(f"Argent : {m.objVal}, Nb_max_jobs : {nbmaxjobs.x}")
+#     # for worker in list_workers:
+#     #     print(worker)
+#     #     for day in list_days:
+#     #         for job in list_jobs:
+#     #             for qual in list_quals:
+#     #                 if planning[worker, qual, day, job].x==1:
+#     #                     print(f"   day={day}, job={job}, qual={qual}")
+
+# epsilon=len(list_days)
+# while epsilon>=0:
+#     m.addConstr(maxlenjob<=epsilon)
+#     m.optimize()
+#     epsilon=maxlenjob.x-1
+#     print(f"Argent : {m.objVal}, max_len_job : {maxlenjob.x}")
+
+epsilon1=len(list_days)
+while epsilon1>=0:
+    epsilon2=len(list_jobs)
+    m.addConstr(maxlenjob<=epsilon1)
+    constr_eps2 = m.addConstr(nbmaxjobs<=epsilon2)
+    while epsilon2>=0:
+        m.optimize()
+        print(f"Argent : {m.objVal}, maxlenjob : {maxlenjob.x}, nbmaxjobs : {nbmaxjobs.x}")
+        epsilon2=nbmaxjobs.x-1
+        m.remove(constr_eps2)
+        constr_eps2=m.addConstr(nbmaxjobs<=epsilon2)
+    epsilon1-=1
+    m.remove(constr_eps2)
+    m.update()
+    
+    
+    
