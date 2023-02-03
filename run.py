@@ -10,7 +10,7 @@ from gurobipy import Model, GRB, quicksum
 # PREPROCESSING
 
 # Open the json file
-JSON_PATH = "data/large_instance.json"
+JSON_PATH = "data/medium_instance.json"
 f = open(JSON_PATH, encoding="utf-8")
 data = json.load(f)
 
@@ -54,10 +54,12 @@ chosenjob = {}
 planning = {}
 estaffecte = {}
 workedtoday={}
-
+begin,end={},{}
 # Create the variables
 for job in list_jobs:
     chosenjob[job] = m.addVar(vtype=GRB.BINARY, name=f"chosenjob_{job}")
+    begin[job] =  m.addVar(vtype=GRB.INTEGER, lb=0, name=f"begin_{job}")
+    end[job] =  m.addVar(vtype=GRB.INTEGER, lb=0, name=f"end_{job}")
     for worker in list_workers:
         estaffecte[worker, job] = m.addVar(
             vtype=GRB.BINARY, name=f"estafecte_{worker}_{job}"
@@ -73,6 +75,7 @@ for job in list_jobs:
             vtype=GRB.BINARY, name=f"workedtoday_{job}_{day}"
         )
 nbmaxjobs = m.addVar(vtype=GRB.INTEGER, lb=0, name="nbmaxjobs")
+maxlenjob = m.addVar(vtype=GRB.INTEGER, lb=0, name="maxlenjob")
 
 # Create the constraints
 for worker in list_workers:
@@ -107,6 +110,12 @@ for worker in list_workers:
 M = 10**6
 
 for job in list_jobs:
+    m.addConstr(1+end[job]-begin[job]<=maxlenjob)
+    for day in list_days:
+        # definition de begin(job)
+        m.addConstr(day-begin[job]>=M*(workedtoday[job,day]-1))
+        # definition de end(job)
+        m.addConstr(end[job]-day>=M*(workedtoday[job,day]-1))
     for qual in list_quals:
         # Contrainte de completion des projets
         m.addConstr(
